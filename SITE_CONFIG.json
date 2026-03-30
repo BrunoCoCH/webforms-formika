@@ -1,0 +1,14 @@
+{
+  "https://example.com": {
+    "site": "example.com",
+    "notify_email": "contact@example.com"
+  },
+  "https://www.example.com": {
+    "site": "example.com",
+    "notify_email": "contact@example.com"
+  },
+  "https://client-a.example": {
+    "site": "client-a.example",
+    "notify_email": "hello@client-a.example"
+  }
+}
