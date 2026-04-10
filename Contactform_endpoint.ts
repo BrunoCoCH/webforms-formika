@@ -1,7 +1,7 @@
 export interface Env {
   TIMETONIC_SESSKEY: string;
-  TIMETONIC_BOOKID: string;
-  TIMETONIC_TABLEID: string;
+  TIMETONIC_USERID: string;
+  TIMETONIC_CATID: string;
   RESEND_API_KEY: string;
 
   FROM_EMAIL: string;
@@ -66,34 +66,60 @@ export default {
         return json({ error: "Invalid email" }, 400, origin, env);
       }
 
-      const ttRes = await fetch("https://api.timetonic.com/live/api.php", {
+      const TT_FIELDS: Record<string, string> = {
+        site:       "8747764",
+        subject:    "8747778",
+        message:    "8747781",
+        first_name: "8747765",
+        company:    "8747775",
+        last_name:  "8747766",
+        email:      "8747767",
+        phone:      "8747768",
+        status:     "8747755",
+      };
+
+      const fieldValues = JSON.stringify({
+        [TT_FIELDS.site]:       resolvedSite,
+        [TT_FIELDS.first_name]: first_name,
+        [TT_FIELDS.last_name]:  last_name,
+        [TT_FIELDS.email]:      email,
+        [TT_FIELDS.phone]:      phone,
+        [TT_FIELDS.company]:    company,
+        [TT_FIELDS.subject]:    subject,
+        [TT_FIELDS.message]:    message,
+        [TT_FIELDS.status]:     status,
+      });
+
+      const rowId = "tmp" + crypto.randomUUID();
+
+      const ttParams = new URLSearchParams({
+        req: "createOrUpdateTableRow",
+        o_u: env.TIMETONIC_USERID,
+        u_c: env.TIMETONIC_USERID,
+        sesskey: env.TIMETONIC_SESSKEY,
+        catId: env.TIMETONIC_CATID,
+        rowId,
+        fieldValues,
+      });
+
+      const ttRes = await fetch("https://timetonic.com/live/api.php", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          req: "createOrUpdateTableRow",
-          sesskey: env.TIMETONIC_SESSKEY,
-          book_id: env.TIMETONIC_BOOKID,
-          table_id: env.TIMETONIC_TABLEID,
-          o_u: "tmpNEW_ROW",
-          fields: {
-            created_at: new Date().toISOString(),
-            site: resolvedSite,
-            first_name,
-            last_name,
-            email,
-            phone,
-            company,
-            subject,
-            message,
-            status,
-            notes,
-          },
-        }),
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: ttParams.toString(),
       });
 
       const ttText = await ttRes.text();
       if (!ttRes.ok) {
         return json({ error: "TimeTonic write failed", details: ttText }, 502, origin, env);
+      }
+
+      try {
+        const ttJson = JSON.parse(ttText);
+        if (ttJson.status !== "ok") {
+          return json({ error: "TimeTonic write failed", details: ttJson }, 502, origin, env);
+        }
+      } catch {
+        return json({ error: "TimeTonic returned invalid JSON", details: ttText }, 502, origin, env);
       }
 
       const fullName = `${first_name} ${last_name}`.trim();
