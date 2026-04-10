@@ -1,11 +1,20 @@
-export interface Env {
-  TIMETONIC_SESSKEY: string;
-  TIMETONIC_USERID: string;
-  TIMETONIC_CATID: string;
-  RESEND_API_KEY: string;
+// =============================================================================
+// Contact Form Worker — Cloudflare Workers (TypeScript version)
+// =============================================================================
+//
+// This is the TypeScript source for the worker deployed as contactform_endpoint.js.
+// See that file or the README for full documentation.
+//
+// Deployed at: https://contact-worker.example.workers.dev
+// =============================================================================
 
-  FROM_EMAIL: string;
-  SITE_CONFIG: {
+export interface Env {
+  TIMETONIC_SESSKEY: string;  // TimeTonic API session key (secret)
+  TIMETONIC_USERID: string;   // TimeTonic user ID, e.g. "your_userid"
+  TIMETONIC_CATID: string;    // TimeTonic category/table ID, e.g. "652923"
+  RESEND_API_KEY: string;     // Resend email API key (secret)
+  FROM_EMAIL: string;         // Sender address for notification emails
+  SITE_CONFIG: {              // Allowed origins -> site config mapping
     [origin: string]: {
       site: string;
       notify_email: string;
@@ -13,11 +22,26 @@ export interface Env {
   };
 }
 
+// TimeTonic field IDs for the Messages_Forms table (catId: 652923)
+// To find these: open the table in TimeTonic > Table options > Organize columns
+const TT_FIELDS: Record<string, string> = {
+  site:       "8747764",
+  subject:    "8747778",
+  message:    "8747781",
+  first_name: "8747765",
+  company:    "8747775",
+  last_name:  "8747766",
+  email:      "8747767",
+  phone:      "8747768",
+  status:     "8747755",
+};
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const origin = request.headers.get("Origin") || "";
     const url = new URL(request.url);
 
+    // Handle CORS preflight
     if (request.method === "OPTIONS") {
       return new Response(null, {
         status: 204,
@@ -29,6 +53,7 @@ export default {
       return json({ error: "Not found" }, 404, origin, env);
     }
 
+    // Reject requests from origins not in SITE_CONFIG
     const siteConfig = env.SITE_CONFIG?.[origin];
     if (!siteConfig) {
       return json({ error: "Forbidden origin" }, 403, origin, env);
@@ -39,8 +64,9 @@ export default {
     }
 
     try {
-      const body = await request.json<any>();
+      const body = (await request.json()) as Record<string, unknown>;
 
+      // Honeypot: bots fill hidden fields — silently succeed to avoid detection
       if (body.website_url) {
         return json({ ok: true }, 200, origin, env);
       }
@@ -66,18 +92,7 @@ export default {
         return json({ error: "Invalid email" }, 400, origin, env);
       }
 
-      const TT_FIELDS: Record<string, string> = {
-        site:       "8747764",
-        subject:    "8747778",
-        message:    "8747781",
-        first_name: "8747765",
-        company:    "8747775",
-        last_name:  "8747766",
-        email:      "8747767",
-        phone:      "8747768",
-        status:     "8747755",
-      };
-
+      // --- Step 1: Write to TimeTonic ---
       const fieldValues = JSON.stringify({
         [TT_FIELDS.site]:       resolvedSite,
         [TT_FIELDS.first_name]: first_name,
@@ -113,6 +128,7 @@ export default {
         return json({ error: "TimeTonic write failed", details: ttText }, 502, origin, env);
       }
 
+      // TimeTonic returns HTTP 200 even on errors — must check the JSON body
       try {
         const ttJson = JSON.parse(ttText);
         if (ttJson.status !== "ok") {
@@ -122,6 +138,7 @@ export default {
         return json({ error: "TimeTonic returned invalid JSON", details: ttText }, 502, origin, env);
       }
 
+      // --- Step 2: Send notification email via Resend ---
       const fullName = `${first_name} ${last_name}`.trim();
 
       const emailRes = await fetch("https://api.resend.com/emails", {
@@ -159,6 +176,10 @@ export default {
     }
   },
 };
+
+// =============================================================================
+// Helper functions
+// =============================================================================
 
 function corsHeaders(origin: string, env: Env): Record<string, string> {
   const allowedOrigin = env.SITE_CONFIG?.[origin] ? origin : "null";

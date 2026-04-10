@@ -1,0 +1,187 @@
+# =============================================================================
+# Webflow Integration Guide
+# =============================================================================
+#
+# How to connect a Webflow contact form to the Cloudflare Worker backend.
+# This sends form data to TimeTonic and triggers a notification email.
+#
+# Prerequisites:
+#   - The Webflow site's origin must be in the worker's SITE_CONFIG
+#     (e.g. "https://www.mysite.ch" with its notify_email)
+#   - The worker is deployed at:
+#     https://contact-worker.example.workers.dev/contact
+# =============================================================================
+
+# --- STEP 1: Build the form in Webflow Designer ---
+#
+# Create a Form Block and give the <form> element an ID: "contact-form"
+#
+# Add these input fields with these exact Name attributes:
+#   - first_name   (required)
+#   - last_name
+#   - email        (required, type: email)
+#   - phone
+#   - company
+#   - subject
+#   - message      (required, use textarea)
+#
+# Add a hidden input field:
+#   - Name: website_url
+#   - Value: (leave empty)
+#   - This is a honeypot to catch bots. Hide it with display:none.
+#
+# Disable Webflow's built-in form action:
+#   - In Form Settings, set Action to "#"
+#
+# --- STEP 2: Add custom code ---
+#
+# Go to Page Settings > Custom Code > Before </body> tag
+# (or Site Settings > Custom Code for site-wide)
+#
+# Paste the script below:
+
+script: |
+  <script>
+  document.getElementById('contact-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    var form = e.target;
+    var btn = form.querySelector('[type="submit"]');
+    var originalText = btn.value || btn.textContent;
+    var successDiv = form.parentElement.querySelector('.w-form-done');
+    var errorDiv = form.parentElement.querySelector('.w-form-fail');
+
+    // Reset messages
+    if (successDiv) successDiv.style.display = 'none';
+    if (errorDiv) errorDiv.style.display = 'none';
+
+    // Loading state
+    btn.disabled = true;
+    btn.value = 'Sending...';
+    btn.textContent = 'Sending...';
+
+    var data = {
+      site: window.location.hostname,
+      first_name: (form.querySelector('[name="first_name"]') || {}).value || '',
+      last_name:  (form.querySelector('[name="last_name"]')  || {}).value || '',
+      email:      (form.querySelector('[name="email"]')      || {}).value || '',
+      phone:      (form.querySelector('[name="phone"]')      || {}).value || '',
+      company:    (form.querySelector('[name="company"]')    || {}).value || '',
+      subject:    (form.querySelector('[name="subject"]')    || {}).value || '',
+      message:    (form.querySelector('[name="message"]')    || {}).value || '',
+      website_url:(form.querySelector('[name="website_url"]')|| {}).value || '',
+      status: 'new',
+      notes: ''
+    };
+
+    try {
+      var res = await fetch('https://contact-worker.example.workers.dev/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      if (res.ok) {
+        form.style.display = 'none';
+        if (successDiv) {
+          successDiv.style.display = 'block';
+        } else {
+          form.insertAdjacentHTML('afterend',
+            '<div class="w-form-done" style="display:block"><div>Thank you! Your message has been sent.</div></div>'
+          );
+        }
+      } else {
+        var err = await res.json();
+        if (errorDiv) {
+          errorDiv.style.display = 'block';
+          errorDiv.textContent = err.error || 'Something went wrong. Please try again.';
+        } else {
+          alert(err.error || 'Something went wrong. Please try again.');
+        }
+      }
+    } catch (ex) {
+      if (errorDiv) {
+        errorDiv.style.display = 'block';
+        errorDiv.textContent = 'Network error. Please try again.';
+      } else {
+        alert('Network error. Please try again.');
+      }
+    } finally {
+      btn.disabled = false;
+      btn.value = originalText;
+      btn.textContent = originalText;
+    }
+  });
+  </script>
+
+# --- STEP 3: Newsletter form variant ---
+#
+# For a simple newsletter signup, use a form with ID "newsletter-form"
+# and only an email field (+ optional first_name).
+# Paste this in the same custom code area:
+
+newsletter_script: |
+  <script>
+  document.getElementById('newsletter-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    var form = e.target;
+    var btn = form.querySelector('[type="submit"]');
+    var originalText = btn.value || btn.textContent;
+    var successDiv = form.parentElement.querySelector('.w-form-done');
+
+    btn.disabled = true;
+    btn.value = 'Subscribing...';
+    btn.textContent = 'Subscribing...';
+
+    var data = {
+      site: window.location.hostname,
+      first_name: (form.querySelector('[name="first_name"]') || {}).value || 'Subscriber',
+      email:      (form.querySelector('[name="email"]')      || {}).value || '',
+      message: 'Newsletter subscription',
+      subject: 'Newsletter signup',
+      website_url: '',
+      status: 'new',
+      notes: ''
+    };
+
+    try {
+      var res = await fetch('https://contact-worker.example.workers.dev/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      if (res.ok) {
+        form.style.display = 'none';
+        if (successDiv) {
+          successDiv.style.display = 'block';
+        } else {
+          form.insertAdjacentHTML('afterend',
+            '<div class="w-form-done" style="display:block"><div>Thanks for subscribing!</div></div>'
+          );
+        }
+      } else {
+        alert('Could not subscribe. Please try again.');
+      }
+    } catch (ex) {
+      alert('Network error. Please try again.');
+    } finally {
+      btn.disabled = false;
+      btn.value = originalText;
+      btn.textContent = originalText;
+    }
+  });
+  </script>
+
+# --- NOTES ---
+#
+# - The script uses Webflow's built-in .w-form-done and .w-form-fail divs
+#   for success/error messages (they exist by default in Webflow Form Blocks).
+# - The honeypot field (website_url) should be hidden with CSS: display:none
+#   Do NOT use type="hidden" -- bots can detect that. Use a visible input
+#   wrapped in a div with display:none.
+# - Make sure to add BOTH the www and non-www origins to SITE_CONFIG
+#   (e.g. "https://mysite.ch" AND "https://www.mysite.ch").

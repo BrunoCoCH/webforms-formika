@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Webforms — Site setup</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;1,9..40,400&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Webforms setup</h1>
+      <p>
+        Configure allowed websites for your contact worker, copy <code>SITE_CONFIG</code> for Cloudflare, and paste form
+        snippets into Webflow or any site. Nothing is sent to a server — data stays in this browser (<code
+          >localStorage</code
+        >). On GitHub Pages, saved data is tied to this origin (<code>example.github.io</code>).
+      </p>
+      <p style="margin-top: 0.5rem"><a href="../" style="font-size: 0.85rem">&larr; Back</a></p>
+    </header>
+
+    <div class="layout">
+      <div class="card">
+        <h2>API base URL</h2>
+        <p class="hint">Your Worker URL without a trailing slash. Change when you use a custom domain (e.g. api.example.dev).</p>
+        <label for="apiBaseUrl">Worker origin</label>
+        <input type="url" id="apiBaseUrl" autocomplete="url" />
+      </div>
+
+      <div class="layout-main">
+        <div class="card">
+          <h2>Websites</h2>
+          <p class="hint">Each row is one logical site. List every browser origin (https://…) that must be allowed by CORS.</p>
+          <ul class="site-list" id="siteList"></ul>
+
+          <h2 style="margin-top: 1.5rem">Add or edit</h2>
+          <form id="formAddSite">
+            <label for="slug">Site label (stored in TimeTonic &ldquo;Site&rdquo; field)</label>
+            <input type="text" id="slug" placeholder="client-a.example" required />
+
+            <label for="notifyEmail" style="margin-top: 0.75rem">Notification email</label>
+            <input type="email" id="notifyEmail" placeholder="hello@client-a.example" required />
+
+            <label for="origins" style="margin-top: 0.75rem">Allowed origins (one per line)</label>
+            <textarea
+              id="origins"
+              placeholder="https://www.client-a.example&#10;https://client-a.example"
+              required
+            ></textarea>
+
+            <div class="btn-row">
+              <button type="submit" class="btn" id="btnSaveSite">Add website</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="card">
+          <h2>Cloudflare <code>SITE_CONFIG</code></h2>
+          <p class="hint">Workers → your worker → Settings → Variables → <code>SITE_CONFIG</code> (plain text, single-line JSON is OK too).</p>
+          <div id="dupWarning" class="warning" style="display: none"></div>
+          <pre class="code" id="siteConfigOut"></pre>
+          <div class="btn-row">
+            <button type="button" class="btn secondary" id="btnCopyConfig">Copy JSON</button>
+          </div>
+
+          <h2 style="margin-top: 1.5rem">Import existing JSON</h2>
+          <p class="hint">Paste contents of <code>SITE_CONFIG.json</code> to load sites here.</p>
+          <textarea id="importJson" placeholder='{ "https://example.com": { "site": "example.com", "notify_email": "a@b.com" } }'></textarea>
+          <div class="btn-row">
+            <button type="button" class="btn secondary" id="btnImport">Import</button>
+            <button type="button" class="btn secondary" id="btnLoadExample">Load example</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Form integration snippets</h2>
+        <p class="hint">
+          Contact form: form id <code>contact-form</code>, input <code>name</code>s as listed. Add a hidden or CSS-hidden
+          <code>website_url</code> honeypot. Newsletter: form id <code>newsletter-form</code>, <code>email</code> required,
+          optional <code>first_name</code>.
+        </p>
+
+        <div class="tabs">
+          <button type="button" class="active" data-tab="contact">Contact form</button>
+          <button type="button" data-tab="newsletter">Newsletter</button>
+          <button type="button" data-tab="fields">Field checklist</button>
+        </div>
+
+        <div class="tab-panel active" data-panel="contact">
+          <p class="hint">Paste before <code>&lt;/body&gt;</code> (Webflow: Page → Custom code). Set form Action to <code>#</code>.</p>
+          <pre class="code" id="snippetContact"></pre>
+          <div class="btn-row">
+            <button type="button" class="btn secondary" id="btnCopyContact">Copy script</button>
+          </div>
+        </div>
+
+        <div class="tab-panel" data-panel="newsletter">
+          <pre class="code" id="snippetNewsletter"></pre>
+          <div class="btn-row">
+            <button type="button" class="btn secondary" id="btnCopyNewsletter">Copy script</button>
+          </div>
+        </div>
+
+        <div class="tab-panel" data-panel="fields">
+          <p class="hint">Webflow: set these as the input <strong>Name</strong> in the form settings.</p>
+          <ul class="checklist">
+            <li><code>first_name</code> — required</li>
+            <li><code>last_name</code></li>
+            <li><code>email</code> — required</li>
+            <li><code>phone</code></li>
+            <li><code>company</code></li>
+            <li><code>subject</code></li>
+            <li><code>message</code> — required (textarea)</li>
+            <li><code>website_url</code> — honeypot (leave empty; hide with CSS)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>After you add a website</h2>
+        <ol class="checklist">
+          <li>Copy the generated <code>SITE_CONFIG</code> JSON into the Worker environment variable in Cloudflare.</li>
+          <li>Save / redeploy the worker if your dashboard requires it.</li>
+          <li>Add the form markup and the script snippet on the site (origins you listed must match exactly, including <code>https://</code> and <code>www</code>).</li>
+          <li>Submit a test; check TimeTonic and the notification inbox.</li>
+        </ol>
+        <p class="hint">
+          This UI never stores API keys. Secrets stay only in Cloudflare (<code>TIMETONIC_SESSKEY</code>,
+          <code>RESEND_API_KEY</code>, etc.).
+        </p>
+      </div>
+    </div>
+
+    <div id="toast" class="toast" role="status"></div>
+    <script src="app.js"></script>
+  </body>
+</html>
