@@ -1,0 +1,78 @@
+Replace the current contact form submission logic with a POST request to an external backend endpoint.
+
+Requirements:
+- Do NOT use Supabase
+- Do NOT use any built-in database integration
+- Keep the current UI and styling unchanged
+
+Form fields to send:
+- first_name
+- last_name
+- email
+- phone
+- company
+- subject
+- message
+
+Also include:
+- site: set this to the current website domain as a string
+- website_url: hidden honeypot field, default empty string
+- status: "new"
+- notes: ""
+
+Endpoint:
+- Send a POST request to:
+  https://contact-worker.example.workers.dev/contact
+
+Request format:
+- Method: POST
+- Header: Content-Type: application/json
+- Body: JSON.stringify({
+    site,
+    first_name,
+    last_name,
+    email,
+    phone,
+    company,
+    subject,
+    message,
+    website_url,
+    status,
+    notes
+  })
+
+Behavior:
+- Show a loading state while the form is submitting
+- On success, show: "Message sent successfully"
+- On failure, show a clear error message
+- Prevent submission if required fields are missing
+- Prevent submission if website_url is filled in
+
+Validation:
+- Required fields:
+  - first_name
+  - email
+  - message
+- Validate email format before sending
+
+Implementation details:
+- Use fetch()
+- Use async/await
+- Do not expose any API keys in frontend code
+- Keep the existing form layout unchanged
+- If there is already a submit handler, replace only the submission logic
+
+Example payload:
+{
+  "site": "example.com",
+  "first_name": "John",
+  "last_name": "Doe",
+  "email": "john@example.com",
+  "phone": "+41 79 123 45 67",
+  "company": "Acme SA",
+  "subject": "Project inquiry",
+  "message": "Hello, I would like to discuss a website project.",
+  "website_url": "",
+  "status": "new",
+  "notes": ""
+}
