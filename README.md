@@ -34,6 +34,34 @@ Browser form submit
 | `docs/` | **GitHub Pages site** — landing page + setup UI under `docs/admin/` (see below). |
 | `README.md` | This file. |
 
+## Public vs private values
+
+This repo can switch between public-safe placeholders and private real values.
+
+If you want your private repo to use your real addresses, keep them in a local file that is not committed:
+
+1. Copy `private-values.example.json` to `private-values.json`
+2. Replace placeholders with your real values
+3. Run:
+
+```
+powershell -ExecutionPolicy Bypass -File .\scripts\apply-private.ps1
+```
+
+The script updates docs/source files in-place for your local/private usage.
+
+To switch back to public/anonymized values, run:
+
+```
+powershell -ExecutionPolicy Bypass -File .\scripts\apply-public.ps1
+```
+
+You can also restore anonymized tracked files directly with git:
+
+```
+git restore README.md Contactform_endpoint.ts contactform_endpoint.js "Webflow Script.yaml" "Lovable Script.yaml" SITE_CONFIG.json docs/index.html docs/CNAME CNAME docs/admin/app.js docs/admin/index.html
+```
+
 ---
 
 ## Admin UI (configure new websites)
@@ -93,7 +121,7 @@ Set these in the Cloudflare dashboard under Workers > `contact-worker-name` > Se
 | `TIMETONIC_USERID` | Plain text | `your_userid` | Your TimeTonic user ID (the `o_u` / `u_c` parameter). |
 | `TIMETONIC_CATID` | Plain text | `652923` | TimeTonic category (table) ID for Messages_Forms. |
 | `RESEND_API_KEY` | **Secret** | *(your key)* | Resend API key from resend.com/api-keys. |
-| `FROM_EMAIL` | Plain text | `gentilrobot@example.com` | Sender address (must be verified in Resend). |
+| `FROM_EMAIL` | Plain text | `no-reply@example.com` | Sender address (must be verified in Resend). |
 | `SITE_CONFIG` | Plain text | *(JSON string)* | Copy from `SITE_CONFIG.json`. Maps allowed origins to notification emails. |
 
 ### 3. TimeTonic Setup
