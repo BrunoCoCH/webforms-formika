@@ -7,7 +7,7 @@
 #
 # Prerequisites:
 #   - The Webflow site's origin must be in the worker's SITE_CONFIG
-#     (e.g. "https://www.mysite.ch" with its notify_email)
+#     (e.g. "https://www.example.com" with its notify_email)
 #   - The worker is deployed at:
 #     https://contact-worker.example.workers.dev/contact
 # =============================================================================
@@ -184,4 +184,4 @@ newsletter_script: |
 #   Do NOT use type="hidden" -- bots can detect that. Use a visible input
 #   wrapped in a div with display:none.
 # - Make sure to add BOTH the www and non-www origins to SITE_CONFIG
-#   (e.g. "https://mysite.ch" AND "https://www.mysite.ch").
+#   (e.g. "https://example.com" AND "https://www.example.com").

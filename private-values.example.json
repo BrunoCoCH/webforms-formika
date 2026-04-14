@@ -1,0 +1,23 @@
+{
+  "replacements": {
+    "https://contact-worker.example.workers.dev": "https://your-worker.your-subdomain.workers.dev",
+    "contact-worker-name": "your-worker-name",
+    "https://example.com": "https://yourdomain.com",
+    "https://www.example.com": "https://www.yourdomain.com",
+    "https://client-a.example": "https://client-a.yourdomain.com",
+    "https://www.client-a.example": "https://www.client-a.yourdomain.com",
+    "https://www.newsite.example": "https://www.newsite.yourdomain.com",
+    "https://newsite.example": "https://newsite.yourdomain.com",
+    "example.com": "yourdomain.com",
+    "client-a.example": "client-a.yourdomain.com",
+    "newsite.example": "newsite.yourdomain.com",
+    "info@example.com": "info@yourdomain.com",
+    "hello@client-a.example": "hello@client-a.yourdomain.com",
+    "hello@newsite.example": "hello@newsite.yourdomain.com",
+    "no-reply@example.com": "no-reply@yourdomain.com",
+    "your_userid": "your_real_timetonic_userid",
+    "setup.example.dev": "setup.yourdomain.dev",
+    "example.github.io": "yourgithubuser.github.io",
+    "github.com/example/webforms-formika": "github.com/your-user/your-private-repo"
+  }
+}
