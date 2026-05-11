@@ -25,15 +25,15 @@ export interface Env {
 // TimeTonic field IDs for the Messages_Forms table (catId: 652923)
 // To find these: open the table in TimeTonic > Table options > Organize columns
 const TT_FIELDS: Record<string, string> = {
-  site:       "8747764",
-  subject:    "8747778",
-  message:    "8747781",
-  first_name: "8747765",
-  company:    "8747775",
-  last_name:  "8747766",
-  email:      "8747767",
-  phone:      "8747768",
-  status:     "8747755",
+  site:       "0000000",
+  subject:    "XXXXXXX",
+  message:    "XXXXXXX",
+  first_name: "XXXXXXX",
+  company:    "XXXXXXX",
+  last_name:  "XXXXXXX",
+  email:      "XXXXXXX",
+  phone:      "XXXXXXX",
+  status:     "XXXXXXX",
 };
 
 export default {
