@@ -1,6 +1,6 @@
-# Webforms -- Contact Form Backend
+# Webforms -- GDPR Contact Form Backend
 
-A Cloudflare Worker that receives contact form submissions from any website, stores them in TimeTonic, and sends notification emails via Resend.
+A Cloudflare Worker that receives contact form submissions from any website, stores them in TimeTonic, and sends notification emails via Resend. GDPR, Swiss nLPD-compliant.
 
 **Worker URL:** `https://contact-worker.example.workers.dev/contact`
 
